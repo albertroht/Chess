@@ -2,7 +2,69 @@
 <p>Status: <span id="status"></span></p>
 <p><span id="fen"></span></p>
 
-<button ion-button id="backback">ganz zurück</button>
-<button ion-button id="back">zurück</button>
-<button ion-button id="vor">vor</button>
-<button ion-button id="vorvor">ganz vor</button>
+<p><span id="fen_game"></span></p>
+
+<ion-grid>
+    <ion-row>
+        <ion-col class="notation" col-5 style="height:75px;overflow:auto;display:block">
+            <div id="notation">
+
+            </div>
+        </ion-col>
+        <ion-col class="notation" id="information" col-7>
+            <ion-row>
+                <ion-col col-4>
+                    Weiß
+                </ion-col>
+                <ion-col col-8>
+                    Albert Roht
+                </ion-col>
+            </ion-row>
+            <ion-row>
+                <ion-col col-4>
+                    Schwarz
+                </ion-col>
+                <ion-col col-8>
+                    Uwe Rau
+                </ion-col>
+            </ion-row>
+        </ion-col>
+    </ion-row>
+</ion-grid>
+
+<ion-grid >
+    <ion-row>
+        <ion-col col-2>
+            <button ion-button id="flip">
+                <ion-icon style="transform: rotate(90deg)" name="repeat"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-2>
+            <button ion-button id="backback">
+                <ion-icon name="rewind"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-2>
+            <button ion-button id="back">
+                <ion-icon name="arrow-back"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-2>
+            <button ion-button id="vor">
+                <ion-icon name="arrow-forward"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-2>
+            <button ion-button id="vorvor">
+                <ion-icon name="fastforward"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-2>
+            <button ion-button id="play">
+                <ion-icon id="play" name="play"></ion-icon>
+                <ion-icon id="stop" name="pause"></ion-icon>
+            </button>
+        </ion-col>
+    </ion-row>
+
+</ion-grid>

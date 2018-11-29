@@ -25675,9 +25675,96 @@ ion-navbar.toolbar {
 }
 
 chess-database-game .highlight {
-  background: yellow;
+  background: silver;
+}
+
+chess-database-game .button {
+  background: silver;
+  margin: 1px;
+  color: white;
+  width: 100%;
+  padding: 5px;
+}
+
+chess-database-game .col {
+  padding: 1px;
+  margin: 0px;
+  text-align: left;
+}
+
+chess-database-game .header {
+  padding: 1px;
+}
+
+chess-database-game .notation {
+  background: #fefefe;
+  color: black;
+  padding-right: 10px;
+}
+
+chess-database-game .list {
+  margin-top: -5px;
+}
+
+chess-database-game .item {
+  padding: 0px;
+  margin: 0px;
+  text-align: left;
+  border-color: silver;
+}
+
+chess-database-game .row {
+  -webkit-padding-after: 5px;
+  padding-block-end: 5px;
+}
+
+chess-database-game .label {
+  padding: 0px;
+  margin: 0px;
+  text-align: left;
+}
+
+chess-database-game .item-md.item-input.ng-valid.item-input-has-value:not(.input-has-focus):not(.item-input-has-focus) .item-inner, chess-database-game .item-md.item-input.ng-valid.input-has-value:not(.input-has-focus):not(.item-input-has-focus) .item-inner {
+  border-bottom: 0px solid #eee;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+chess-database-game .list-md .item-input.ng-valid.item-input-has-value:not(.input-has-focus):not(.item-input-has-focus):last-child, chess-database-game .list-md .item-input.ng-valid.input-has-value:not(.input-has-focus):not(.item-input-has-focus):last-child {
+  border-bottom: 0px solid #eee;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+ion-input.custom-input {
+  text-indent: 0;
+  color: black;
+  opacity: 1;
+  border-color: silver;
+}
+
+ion-input.custom-input ::-webkit-input-placeholder {
+  color: black;
+  opacity: 1;
+  border-color: silver;
+}
+
+ion-input.custom-input ::-ms-input-placeholder {
+  color: black;
+  opacity: 1;
+  border-color: silver;
+}
+
+ion-input.custom-input ::placeholder {
+  color: black;
+  opacity: 1;
+  border-color: silver;
 }
 
 chess-database-new .highlight {
   background: yellow;
+}
+
+page-about .content {
+  background: #fefefe;
 }

@@ -98,7 +98,7 @@ var AboutPage = /** @class */ (function () {
     }
     AboutPage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-about',template:/*ion-inline-start:"/home/albert/Chess/src/pages/about/about.html"*/'<ion-content padding>\n  <chess-database-game></chess-database-game>\n</ion-content>'/*ion-inline-end:"/home/albert/Chess/src/pages/about/about.html"*/
+            selector: 'page-about',template:/*ion-inline-start:"/home/albert/Chess/src/pages/about/about.html"*/'<ion-content padding>\n</ion-content>'/*ion-inline-end:"/home/albert/Chess/src/pages/about/about.html"*/
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["d" /* NavController */]])
     ], AboutPage);
@@ -168,7 +168,7 @@ var HomePage = /** @class */ (function () {
     }
     HomePage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-home',template:/*ion-inline-start:"/home/albert/Chess/src/pages/home/home.html"*/'<ion-content padding>\n  <chess-database-new></chess-database-new>\n</ion-content>'/*ion-inline-end:"/home/albert/Chess/src/pages/home/home.html"*/
+            selector: 'page-home',template:/*ion-inline-start:"/home/albert/Chess/src/pages/home/home.html"*/'<ion-content padding>\n  <chess-database-game></chess-database-game>\n</ion-content>'/*ion-inline-end:"/home/albert/Chess/src/pages/home/home.html"*/
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["d" /* NavController */]])
     ], HomePage);
@@ -348,13 +348,39 @@ var __metadata = (this && this.__metadata) || function (k, v) {
  */
 var ChessDatabaseGameComponent = /** @class */ (function () {
     function ChessDatabaseGameComponent() {
+        this.white = "Albert Roht";
+        this.black = "Magnus Carlsen";
         console.log('Hello ChessDatabaseGameComponent Component');
     }
     ChessDatabaseGameComponent.prototype.ngAfterViewInit = function () {
-        var board, game = __WEBPACK_IMPORTED_MODULE_1_chess_js___default()(), fenEl = $('#fen_game');
+        var board, game = __WEBPACK_IMPORTED_MODULE_1_chess_js___default()(), fenEl = $('#fen_game'), notation = $('#notation');
         var zug = 0;
         var history;
-        var repeat;
+        var repeat = false;
+        var onDragStart = function (source, piece, position, orientation) {
+            if (game.game_over() === true ||
+                (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                return false;
+            }
+        };
+        var onDrop = function (source, target) {
+            // see if the move is legal
+            var move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q' // NOTE: always promote to a queen for example simplicity
+            });
+            // illegal move
+            if (move === null)
+                return 'snapback';
+            updateStatus();
+        };
+        // update the board position after the piece snap 
+        // for castling, en passant, pawn promotion
+        var onSnapEnd = function () {
+            board.position(game.fen());
+        };
         var pgn = ['[Event "Casual Game"]',
             '[Site "Berlin GER"]',
             '[Date "1852.??.??"]',
@@ -378,19 +404,26 @@ var ChessDatabaseGameComponent = /** @class */ (function () {
         var highlight = function (zug_alt, zug_neu) {
             $('#' + zug_alt).removeClass('highlight');
             $('#' + zug_neu).addClass("highlight");
+            if (zug_neu != -1) {
+                document.getElementById(zug_neu).scrollIntoView(true);
+            }
+            else {
+                document.getElementById("0").scrollIntoView(true);
+            }
         };
         var updateStatus = function () {
+            notation.html("");
             fenEl.html("");
             var turn = 'white';
             history = game.history();
             var _loop_1 = function (i) {
                 if (turn == 'white') {
                     turn = 'black';
-                    fenEl.append("<span id='" + i.toString() + "'> " + (i + 1).toString() + ".)" + history[i] + "</span>");
+                    notation.append("<ion-row class='row' id='row" + i.toString() + "'><ion-col class='col' col-2>" + (i / 2).toString() + "</ion-col> <ion-col class='col' col-5 id='" + i.toString() + "'> " + history[i] + "</ion-row>");
                 }
                 else {
                     turn = 'white';
-                    fenEl.append("<span id='" + i.toString() + "'> " + history[i] + "</span>");
+                    $('#row' + (i - 1).toString()).append("<ion-col class='col' col-5 id='" + i.toString() + "'> " + history[i] + "</ion-col>");
                 }
                 $('#' + i.toString()).click(function () {
                     game.reset();
@@ -405,8 +438,8 @@ var ChessDatabaseGameComponent = /** @class */ (function () {
             for (var i = 0; i < history.length; i++) {
                 _loop_1(i);
             }
-            highlight(zug, history.length - 1);
-            zug = history.length - 1;
+            highlight(zug, -1);
+            zug = -1;
         };
         var cfg = {
             draggable: false,
@@ -415,8 +448,8 @@ var ChessDatabaseGameComponent = /** @class */ (function () {
         board = __WEBPACK_IMPORTED_MODULE_2_chessboardjs___default()('chessDatabaseGame', cfg);
         game.load_pgn(pgn.join('\n'));
         updateStatus();
-        board.position(game.fen());
-        $("#back_game").click(function () {
+        game.reset();
+        $("#back").click(function () {
             var zug_alt = zug;
             var zug_neu = zug - 1;
             if (zug > 0) {
@@ -425,15 +458,17 @@ var ChessDatabaseGameComponent = /** @class */ (function () {
                 board.position(game.fen());
                 highlight(zug_alt, zug_neu);
             }
+            repeat = false;
         });
-        $("#backback_game").click(function () {
+        $("#backback").click(function () {
             var zug_alt = zug;
             zug = -1;
             game.reset();
             board.position(game.fen());
             highlight(zug_alt, -1);
+            repeat = false;
         });
-        $("#vor_game").click(function () {
+        $("#vor").click(function () {
             var zug_alt = zug;
             var zug_neu = zug + 1;
             if (zug_neu < history.length) {
@@ -442,19 +477,29 @@ var ChessDatabaseGameComponent = /** @class */ (function () {
                 board.position(game.fen());
                 highlight(zug_alt, zug_neu);
             }
+            repeat = false;
         });
-        $("#vorvor_game").click(function () {
+        $("#vorvor").click(function () {
             var zug_alt = zug;
             zug = history.length - 1;
             game.load_pgn(pgn.join('\n'));
             board.position(game.fen());
             highlight(zug_alt, zug);
+            repeat = false;
         });
-        $("#play_game").click(function () {
-            $("#stop_game").toggle();
-            $("#play_game").toggle();
-            repeat = true;
-            window.setTimeout(makeMove, 400);
+        $("#play").click(function () {
+            if (repeat == false) {
+                repeat = true;
+                window.setTimeout(makeMove, 400);
+                $("#stop_icon").toggle();
+                $("#play_icon").toggle();
+            }
+            else {
+                repeat = false;
+            }
+        });
+        $("#flip").click(function () {
+            board.flip();
         });
         var makeMove = function () {
             if (repeat === true) {
@@ -468,22 +513,46 @@ var ChessDatabaseGameComponent = /** @class */ (function () {
                 }
                 else {
                     repeat = false;
-                    $("#stop_game").toggle();
-                    $("#play_game").toggle();
                 }
                 window.setTimeout(makeMove, 500);
             }
+            else {
+                $("#stop_icon").toggle();
+                $("#play_icon").toggle();
+            }
         };
-        $("#stop_game").click(function () {
-            $("#stop_game").toggle();
-            $("#play_game").toggle();
-            repeat = false;
+        $("#stop_icon").hide();
+        $("#checkmark_icon").hide();
+        $("#black_input").hide();
+        $("#white_input").hide();
+        $("#create_icon").click(function () {
+            var cfg_edit = {
+                draggable: true,
+                position: board.fen(),
+                onDragStart: onDragStart,
+                onDrop: onDrop,
+                onSnapEnd: onSnapEnd
+            };
+            board = __WEBPACK_IMPORTED_MODULE_2_chessboardjs___default()('chessDatabaseGame', cfg_edit);
+            $("#checkmark_icon").toggle();
+            $("#create_icon").toggle();
+            $("#black_input").toggle();
+            $("#white_input").toggle();
+            $("#black_name").toggle();
+            $("#white_name").toggle();
         });
-        $("#stop_game").hide();
+        $("#checkmark_icon").click(function () {
+            $("#checkmark_icon").toggle();
+            $("#create_icon").toggle();
+            $("#black_input").toggle();
+            $("#white_input").toggle();
+            $("#black_name").toggle();
+            $("#white_name").toggle();
+        });
     };
     ChessDatabaseGameComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'chess-database-game',template:/*ion-inline-start:"/home/albert/Chess/src/components/chess-database-game/chess-database-game.html"*/'<div id=\'chessDatabaseGame\' style="width: 400px"></div>\n<p><span id="fen_game"></span></p>\n\n<button ion-button id="backback_game">ganz zurück</button>\n<button ion-button id="back_game">zurück</button>\n<button ion-button id="vor_game">vor</button>\n<button ion-button id="vorvor_game">ganz vor</button>\n<button ion-button id="play_game">play</button>\n<button ion-button id="stop_game">stop</button>'/*ion-inline-end:"/home/albert/Chess/src/components/chess-database-game/chess-database-game.html"*/
+            selector: 'chess-database-game',template:/*ion-inline-start:"/home/albert/Chess/src/components/chess-database-game/chess-database-game.html"*/'<div id=\'chessDatabaseGame\' style="width: 100%"></div>\n<p><span id="fen_game"></span></p>\n<br>\n<ion-grid>\n    <ion-row>\n        <ion-col id="notation" class="notation" col-5 style="height:75px;overflow:auto;display:block">\n        </ion-col>\n        <ion-col class="notation" id="information" col-7 style="height:75px;">\n            <ion-list>\n                <ion-item item-left>\n                    <ion-label>\n                        <ion-icon><img src="imgs/white_knight.svg" style="max-height: 30px"></ion-icon>\n                    </ion-label>\n                    <div id="white_name" item-content>{{white}}</div>\n                    <ion-input id="white_input" placeholder="{{white}}" [(ngModel)]="white"></ion-input>\n                </ion-item>\n                <ion-item>\n                    <ion-label>\n                        <ion-icon><img src="imgs/black_knight.svg" style="max-height: 30px"></ion-icon>\n                    </ion-label>\n                    <div id="black_name" item-content>{{black}}</div>\n                    <ion-input id="black_input" placeholder="{{black}}" [(ngModel)]="black"></ion-input>\n                </ion-item>\n            </ion-list>\n        </ion-col>\n    </ion-row>\n</ion-grid>\n<br>\n<ion-grid>\n    <ion-row>\n\n        <ion-col col-3>\n            <button ion-button id="backback">\n                <ion-icon name="rewind"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-3>\n            <button ion-button id="back">\n                <ion-icon name="arrow-back"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-3>\n            <button ion-button id="vor">\n                <ion-icon name="arrow-forward"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-3>\n            <button ion-button id="vorvor">\n                <ion-icon name="fastforward"></ion-icon>\n            </button>\n        </ion-col>\n\n\n    </ion-row>\n    <ion-row>\n        <ion-col col-4>\n            <button ion-button id="flip">\n                <ion-icon style="transform: rotate(90deg)" name="repeat"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-4>\n            <button ion-button id="play">\n                <ion-icon id="play_icon" name="play"></ion-icon>\n                <ion-icon id="stop_icon" name="pause"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-4>\n            <button ion-button id="edit">\n                <ion-icon  name="create" id="create_icon"></ion-icon>\n                <ion-icon  name="checkmark" id="checkmark_icon"></ion-icon>\n            </button>\n        </ion-col>\n    </ion-row>\n\n</ion-grid>'/*ion-inline-end:"/home/albert/Chess/src/components/chess-database-game/chess-database-game.html"*/
         }),
         __metadata("design:paramtypes", [])
     ], ChessDatabaseGameComponent);
@@ -659,10 +728,13 @@ var ChessDatabaseNewComponent = /** @class */ (function () {
             board.position(game.fen());
             highlight(zug_alt, zug_neu);
         });
+        $("#flip").click(function () {
+            board.flip();
+        });
     };
     ChessDatabaseNewComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'chess-database-new',template:/*ion-inline-start:"/home/albert/Chess/src/components/chess-database-new/chess-database-new.html"*/'<div id=\'board\' style="width: 400px"></div>\n<p>Status: <span id="status"></span></p>\n<p><span id="fen"></span></p>\n\n<button ion-button id="backback">ganz zurück</button>\n<button ion-button id="back">zurück</button>\n<button ion-button id="vor">vor</button>\n<button ion-button id="vorvor">ganz vor</button>'/*ion-inline-end:"/home/albert/Chess/src/components/chess-database-new/chess-database-new.html"*/
+            selector: 'chess-database-new',template:/*ion-inline-start:"/home/albert/Chess/src/components/chess-database-new/chess-database-new.html"*/'<div id=\'board\' style="width: 400px"></div>\n<p>Status: <span id="status"></span></p>\n<p><span id="fen"></span></p>\n\n<p><span id="fen_game"></span></p>\n\n<ion-grid>\n    <ion-row>\n        <ion-col class="notation" col-5 style="height:75px;overflow:auto;display:block">\n            <div id="notation">\n\n            </div>\n        </ion-col>\n        <ion-col class="notation" id="information" col-7>\n            <ion-row>\n                <ion-col col-4>\n                    Weiß\n                </ion-col>\n                <ion-col col-8>\n                    Albert Roht\n                </ion-col>\n            </ion-row>\n            <ion-row>\n                <ion-col col-4>\n                    Schwarz\n                </ion-col>\n                <ion-col col-8>\n                    Uwe Rau\n                </ion-col>\n            </ion-row>\n        </ion-col>\n    </ion-row>\n</ion-grid>\n\n<ion-grid >\n    <ion-row>\n        <ion-col col-2>\n            <button ion-button id="flip">\n                <ion-icon style="transform: rotate(90deg)" name="repeat"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-2>\n            <button ion-button id="backback">\n                <ion-icon name="rewind"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-2>\n            <button ion-button id="back">\n                <ion-icon name="arrow-back"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-2>\n            <button ion-button id="vor">\n                <ion-icon name="arrow-forward"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-2>\n            <button ion-button id="vorvor">\n                <ion-icon name="fastforward"></ion-icon>\n            </button>\n        </ion-col>\n        <ion-col col-2>\n            <button ion-button id="play">\n                <ion-icon id="play" name="play"></ion-icon>\n                <ion-icon id="stop" name="pause"></ion-icon>\n            </button>\n        </ion-col>\n    </ion-row>\n\n</ion-grid>'/*ion-inline-end:"/home/albert/Chess/src/components/chess-database-new/chess-database-new.html"*/
         }),
         __metadata("design:paramtypes", [])
     ], ChessDatabaseNewComponent);

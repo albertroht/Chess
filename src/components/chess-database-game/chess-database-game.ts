@@ -13,18 +13,50 @@ import ChessBoard from 'chessboardjs';
 })
 export class ChessDatabaseGameComponent {
 
+  white: string = "Albert Roht";
+  black: string = "Magnus Carlsen";
 
   constructor() {
     console.log('Hello ChessDatabaseGameComponent Component');
   }
 
   ngAfterViewInit() {
+
     var board,
       game = Chess(),
-      fenEl = $('#fen_game')
+      fenEl = $('#fen_game'),
+      notation = $('#notation');
     var zug = 0;
     var history;
-    var repeat;
+    var repeat = false;
+
+    var onDragStart = function (source, piece, position, orientation) {
+      if (game.game_over() === true ||
+        (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+        return false;
+      }
+    };
+
+    var onDrop = function (source, target) {
+      // see if the move is legal
+      var move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      });
+
+      // illegal move
+      if (move === null) return 'snapback';
+
+      updateStatus();
+    };
+
+    // update the board position after the piece snap 
+    // for castling, en passant, pawn promotion
+    var onSnapEnd = function () {
+      board.position(game.fen());
+    };
 
     var pgn = ['[Event "Casual Game"]',
       '[Site "Berlin GER"]',
@@ -51,9 +83,15 @@ export class ChessDatabaseGameComponent {
     var highlight = function (zug_alt, zug_neu) {
       $('#' + zug_alt).removeClass('highlight');
       $('#' + zug_neu).addClass("highlight");
+      if (zug_neu != -1) {
+        document.getElementById(zug_neu).scrollIntoView(true);
+      } else {
+        document.getElementById("0").scrollIntoView(true);
+      }
     }
 
     var updateStatus = function () {
+      notation.html("");
       fenEl.html("");
       let turn = 'white';
       history = game.history();
@@ -61,11 +99,10 @@ export class ChessDatabaseGameComponent {
 
         if (turn == 'white') {
           turn = 'black';
-          fenEl.append("<span id='" + i.toString() + "'> " + (i + 1).toString() + ".)" + history[i] + "</span>");
-
+          notation.append("<ion-row class='row' id='row" + i.toString() + "'><ion-col class='col' col-2>" + (i / 2).toString() + "</ion-col> <ion-col class='col' col-5 id='" + i.toString() + "'> " + history[i] + "</ion-row>");
         } else {
           turn = 'white';
-          fenEl.append("<span id='" + i.toString() + "'> " + history[i] + "</span>");
+          $('#row' + (i - 1).toString()).append("<ion-col class='col' col-5 id='" + i.toString() + "'> " + history[i] + "</ion-col>");
         }
 
         $('#' + i.toString()).click(function () {
@@ -79,8 +116,8 @@ export class ChessDatabaseGameComponent {
         });
 
       }
-      highlight(zug, history.length - 1);
-      zug = history.length - 1;
+      highlight(zug, -1);
+      zug = - 1;
     };
 
     var cfg = {
@@ -88,13 +125,15 @@ export class ChessDatabaseGameComponent {
       position: 'start',
     };
 
+    
+
     board = ChessBoard('chessDatabaseGame', cfg);
 
     game.load_pgn(pgn.join('\n'));
     updateStatus();
-    board.position(game.fen());
+    game.reset();
 
-    $("#back_game").click(function () {
+    $("#back").click(function () {
       let zug_alt = zug;
       let zug_neu = zug - 1
       if (zug > 0) {
@@ -103,17 +142,19 @@ export class ChessDatabaseGameComponent {
         board.position(game.fen());
         highlight(zug_alt, zug_neu);
       }
+      repeat = false;
     });
 
-    $("#backback_game").click(function () {
+    $("#backback").click(function () {
       let zug_alt = zug;
       zug = -1;
       game.reset();
       board.position(game.fen());
       highlight(zug_alt, -1);
+      repeat = false;
     });
 
-    $("#vor_game").click(function () {
+    $("#vor").click(function () {
       let zug_alt = zug;
       let zug_neu = zug + 1;
       if (zug_neu < history.length) {
@@ -122,21 +163,32 @@ export class ChessDatabaseGameComponent {
         board.position(game.fen());
         highlight(zug_alt, zug_neu);
       }
+      repeat = false;
     });
 
-    $("#vorvor_game").click(function () {
+    $("#vorvor").click(function () {
       let zug_alt = zug;
       zug = history.length - 1;
       game.load_pgn(pgn.join('\n'));
       board.position(game.fen());
       highlight(zug_alt, zug);
+      repeat = false;
     });
 
-    $("#play_game").click(function () {
-      $("#stop_game").toggle();
-      $("#play_game").toggle();
-      repeat = true;
-      window.setTimeout(makeMove, 400);
+    $("#play").click(function () {
+      if (repeat == false) {
+        repeat = true;
+        window.setTimeout(makeMove, 400);
+        $("#stop_icon").toggle();
+        $("#play_icon").toggle();
+      }
+      else {
+        repeat = false;
+      }
+    });
+
+    $("#flip").click(function () {
+      board.flip();
     });
 
     var makeMove = function () {
@@ -150,21 +202,47 @@ export class ChessDatabaseGameComponent {
           highlight(zug_alt, zug_neu);
         } else {
           repeat = false;
-          $("#stop_game").toggle();
-          $("#play_game").toggle();
         }
         window.setTimeout(makeMove, 500);
+      } else {
+        $("#stop_icon").toggle();
+        $("#play_icon").toggle();
       }
 
     }
 
-    $("#stop_game").click(function () {
-      $("#stop_game").toggle();
-      $("#play_game").toggle();
-      repeat = false;
+    $("#stop_icon").hide();
+    $("#checkmark_icon").hide();
+    $("#black_input").hide();
+    $("#white_input").hide();
+
+    $("#create_icon").click(function () {
+      let cfg_edit = {
+        draggable: true,
+        position: board.fen(),
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onSnapEnd: onSnapEnd
+      };
+      board = ChessBoard('chessDatabaseGame', cfg_edit);
+      $("#checkmark_icon").toggle();
+      $("#create_icon").toggle();
+      $("#black_input").toggle();
+      $("#white_input").toggle();
+      $("#black_name").toggle();
+      $("#white_name").toggle();
     });
 
-    $("#stop_game").hide();
+    $("#checkmark_icon").click(function () {
+
+      $("#checkmark_icon").toggle();
+      $("#create_icon").toggle();
+      $("#black_input").toggle();
+      $("#white_input").toggle();
+      $("#black_name").toggle();
+      $("#white_name").toggle();
+
+    });
 
   }
 

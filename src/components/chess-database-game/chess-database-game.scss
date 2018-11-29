@@ -1,5 +1,72 @@
 chess-database-game {
+
     .highlight {
-        background: yellow;
-      }
+        background: silver;
+    }
+    .button {
+        background: silver;
+        margin: 1px;
+        color: white;
+        width: 100%;
+        padding: 5px;
+    }
+    .col {
+        padding: 1px;
+        margin: 0px;
+        text-align: left;
+    }
+    .header {
+        padding: 1px;
+    }
+    .notation {
+        //border:1px solid silver;
+        background: #fefefe;
+        color: black;
+        padding-right:10px;
+    }
+
+    .list{
+        margin-top: -5px;
+    }
+
+    .item{
+        padding: 0px;
+        margin: 0px;
+        text-align: left;
+        border-color:silver;
+    }
+
+    .row{
+        padding-block-end: 5px;
+    }
+    .label{
+        padding: 0px;
+        margin: 0px;
+        text-align: left;
+    }
+    .item-md.item-input.ng-valid.item-input-has-value:not(.input-has-focus):not(.item-input-has-focus) .item-inner, .item-md.item-input.ng-valid.input-has-value:not(.input-has-focus):not(.item-input-has-focus) .item-inner {
+        border-bottom:0px solid #eee; // or any thing
+        box-shadow:none;
+    }
+
+    .list-md .item-input.ng-valid.item-input-has-value:not(.input-has-focus):not(.item-input-has-focus):last-child, .list-md .item-input.ng-valid.input-has-value:not(.input-has-focus):not(.item-input-has-focus):last-child {
+        border-bottom:0px solid #eee; // or any thing
+        box-shadow:none;
+    }
+
+
+}
+
+ion-input {
+    &.custom-input {
+        text-indent: 0;
+        color: black;
+        opacity: 1;
+        border-color:silver;
+        ::placeholder {
+            color: black;
+            opacity: 1;
+            border-color:silver;
+        }
+    }
 }

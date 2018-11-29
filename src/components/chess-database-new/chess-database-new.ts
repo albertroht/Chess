@@ -24,7 +24,7 @@ export class ChessDatabaseNewComponent {
     var board,
       game = Chess(),
       statusEl = $('#status'),
-      fenEl = $('#fen')
+      fenEl = $('#fen');
     var zug = 0;
     var history;
 
@@ -177,8 +177,11 @@ export class ChessDatabaseNewComponent {
       }
       board.position(game.fen());
       highlight(zug_alt, zug_neu);
-    })
+    });
 
+    $("#flip").click(function () {
+      board.flip();
+    });
   }
 
 }

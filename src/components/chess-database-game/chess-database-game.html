@@ -1,9 +1,75 @@
-<div id='chessDatabaseGame' style="width: 400px"></div>
+<div id='chessDatabaseGame' style="width: 100%"></div>
 <p><span id="fen_game"></span></p>
+<br>
+<ion-grid>
+    <ion-row>
+        <ion-col id="notation" class="notation" col-5 style="height:75px;overflow:auto;display:block">
+        </ion-col>
+        <ion-col class="notation" id="information" col-7 style="height:75px;">
+            <ion-list>
+                <ion-item item-left>
+                    <ion-label>
+                        <ion-icon><img src="imgs/white_knight.svg" style="max-height: 30px"></ion-icon>
+                    </ion-label>
+                    <div id="white_name" item-content>{{white}}</div>
+                    <ion-input id="white_input" placeholder="{{white}}" [(ngModel)]="white"></ion-input>
+                </ion-item>
+                <ion-item>
+                    <ion-label>
+                        <ion-icon><img src="imgs/black_knight.svg" style="max-height: 30px"></ion-icon>
+                    </ion-label>
+                    <div id="black_name" item-content>{{black}}</div>
+                    <ion-input id="black_input" placeholder="{{black}}" [(ngModel)]="black"></ion-input>
+                </ion-item>
+            </ion-list>
+        </ion-col>
+    </ion-row>
+</ion-grid>
+<br>
+<ion-grid>
+    <ion-row>
 
-<button ion-button id="backback_game">ganz zurück</button>
-<button ion-button id="back_game">zurück</button>
-<button ion-button id="vor_game">vor</button>
-<button ion-button id="vorvor_game">ganz vor</button>
-<button ion-button id="play_game">play</button>
-<button ion-button id="stop_game">stop</button>
+        <ion-col col-3>
+            <button ion-button id="backback">
+                <ion-icon name="rewind"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-3>
+            <button ion-button id="back">
+                <ion-icon name="arrow-back"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-3>
+            <button ion-button id="vor">
+                <ion-icon name="arrow-forward"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-3>
+            <button ion-button id="vorvor">
+                <ion-icon name="fastforward"></ion-icon>
+            </button>
+        </ion-col>
+
+
+    </ion-row>
+    <ion-row>
+        <ion-col col-4>
+            <button ion-button id="flip">
+                <ion-icon style="transform: rotate(90deg)" name="repeat"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-4>
+            <button ion-button id="play">
+                <ion-icon id="play_icon" name="play"></ion-icon>
+                <ion-icon id="stop_icon" name="pause"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-4>
+            <button ion-button id="edit">
+                <ion-icon  name="create" id="create_icon"></ion-icon>
+                <ion-icon  name="checkmark" id="checkmark_icon"></ion-icon>
+            </button>
+        </ion-col>
+    </ion-row>
+
+</ion-grid>
