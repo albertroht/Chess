@@ -21,8 +21,21 @@
                 </ion-item>
             </ion-list>
         </ion-col>
-        <ion-col id="notation" class="notation" col-5 style="height:75px;overflow:auto;display:block">
+        <ion-col class="notation" col-5 style="height:75px;overflow:auto;display:block">
+            <ion-row *ngFor="let move of moves;let i = index">
+                <ion-col col-2>
+                    {{i}}
+                </ion-col>
+                <ion-col col-5 id="{{i*2}}" (click)=position(i*2)>
+                    {{move.white}}
+                </ion-col>
+                <ion-col col-5 id="{{i*2+1}}" (click)=position(i*2)>
+                    {{move.black}}
+                </ion-col>
+
+            </ion-row>
         </ion-col>
+
     </ion-row>
 </ion-grid>
 <br>
@@ -53,31 +66,20 @@
 
     </ion-row>
     <ion-row>
-        <ion-col col-2>
+        <ion-col col-4>
             <button ion-button id="flip">
                 <ion-icon style="transform: rotate(90deg)" name="repeat"></ion-icon>
             </button>
         </ion-col>
-        <ion-col col-2>
+        <ion-col col-4>
             <button ion-button id="play">
                 <ion-icon id="play_icon" name="play"></ion-icon>
                 <ion-icon id="stop_icon" name="pause"></ion-icon>
             </button>
         </ion-col>
-        <ion-col col-2>
-            <button ion-button id="edit">
-                <ion-icon name="create" id="create_icon"></ion-icon>
-                <ion-icon name="checkmark" id="checkmark_icon"></ion-icon>
-            </button>
-        </ion-col>
-        <ion-col col-3>
+        <ion-col col-4>
             <button ion-button id="save_database">
                 <ion-icon name="checkmark"></ion-icon>
-            </button>
-        </ion-col>
-        <ion-col col-3>
-            <button ion-button id="check_database">
-                <ion-icon name="search"></ion-icon>
             </button>
         </ion-col>
     </ion-row>

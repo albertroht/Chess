@@ -1,4 +1,4 @@
-import { Component, Self } from '@angular/core';
+import { Component, Self, Testability } from '@angular/core';
 import Chess from 'chess.js';
 import ChessBoard from 'chessboardjs';
 import { PgnParser } from '@chess-fu/pgn-parser';
@@ -18,10 +18,16 @@ import { AlertController } from 'ionic-angular';
 })
 export class ChessDatabaseGameComponent {
 
-  white: string = "Albert Roht";
-  black: string = "Magnus Carlsen";
+  white: string = "";
+  black: string = "";
   key: string;
   games_played: any;
+  game: any = Chess();
+  moves: any = [];
+  board: any;
+  zug: number = 0;
+  history: any = [];
+
 
   games: any;
   constructor(private db: AngularFirestore, private alertCtrl: AlertController) {
@@ -32,23 +38,72 @@ export class ChessDatabaseGameComponent {
 
   }
 
-  presentAlert(key: string) {
+  async presentAlert(key: string) {
     let alert = this.alertCtrl.create({
       title: 'Spielinformationen',
       message: this.games[key].pgn,
-      buttons: ['Dismiss']
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => {
+            console.log('Cancel clicked');
+          }
+        },
+        {
+          text: 'Nachspielen',
+          handler: () => {
+            this.white = this.games[key].white;
+            this.black = this.games[key].black;
+            let new_game = Chess();
+            new_game.load_pgn(this.games[key].pgn)
+            this.history = new_game.history()
+            this.update()
+          }
+        }
+      ]
     });
     alert.present();
   }
 
+  async update() {
+    let turn = 'white';
+    for (let i = 0; i < this.history.length; i++) {
+
+      if (turn == 'white') {
+        this.moves[i / 2] = {}
+        this.moves[i / 2]['white'] = this.history[i]
+        turn = 'black';
+      } else {
+        this.moves[(i - 1) / 2]['black'] = this.history[i]
+        turn = 'white';
+      }
+    }
+    await this.delay(10)
+
+    document.getElementById((this.zug).toString()).scrollIntoView(false);
+    $('#' + this.zug).addClass("highlight");
+  };
+
+  async delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  position(pos: number) {
+    this.game.reset();
+    for (let j = 0; j <= pos; j++) {
+      this.game.move(this.history[j]);
+    }
+    this.board.position(this.game.fen());
+    $('#' + this.zug).removeClass('highlight');
+    $('#' + pos).addClass("highlight");
+    this.zug = pos;
+    document.getElementById((pos.toString())).scrollIntoView(false);
+  }
+
   ngAfterViewInit() {
 
-    var board,
-      game = Chess(),
-      fenEl = $('#fen_game'),
-      notation = $('#notation');
-    var zug = 0;
-    var history = [];
+
     var repeat = false;
     var create = 0;
 
@@ -56,16 +111,16 @@ export class ChessDatabaseGameComponent {
     let self = this;
 
     var onDragStart = function (source, piece, position, orientation) {
-      if (game.game_over() === true ||
-        (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+      if (self.game.game_over() === true ||
+        (self.game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+        (self.game.turn() === 'b' && piece.search(/^w/) !== -1)) {
         return false;
       }
     };
 
-    var onDrop = function (source, target) {
+    var onDrop = async function (source, target) {
       // see if the move is legal
-      var move = game.move({
+      var move = self.game.move({
         from: source,
         to: target,
         promotion: 'q' // NOTE: always promote to a queen for example simplicity
@@ -75,11 +130,10 @@ export class ChessDatabaseGameComponent {
       if (move === null) return 'snapback';
 
       updateStatus();
+      await self.delay(1);
 
-
-      highlight(zug, history.length - 1);
-      zug = history.length - 1;
-
+      highlight(self.zug, self.history.length - 1);
+      self.zug = self.history.length - 1;
       check_database();
 
 
@@ -88,7 +142,7 @@ export class ChessDatabaseGameComponent {
     // update the board position after the piece snap 
     // for castling, en passant, pawn promotion
     var onSnapEnd = function () {
-      board.position(game.fen());
+      self.board.position(self.game.fen());
     };
 
     const parser = new PgnParser();
@@ -101,53 +155,33 @@ export class ChessDatabaseGameComponent {
       $('#' + zug_neu).addClass("highlight");
     }
 
-    var scrollIntoView = function (zug) {
-      if (zug != -1) {
-        document.getElementById(zug).scrollIntoView(true);
-      } else {
-        document.getElementById("0").scrollIntoView(true);
-      }
-    }
-
     var updateStatus = function () {
-      notation.html("");
-      fenEl.html("");
       let turn = 'white';
-      history = game.history();
-      for (let i = 0; i < history.length; i++) {
+      self.history = self.game.history();
+      for (let i = 0; i < self.history.length; i++) {
 
         if (turn == 'white') {
+          self.moves[i / 2] = {}
+          self.moves[i / 2]['white'] = self.history[i]
           turn = 'black';
-          notation.append("<ion-row class='row' id='row" + i.toString() + "'><ion-col class='col' col-2>" + (i / 2).toString() + "</ion-col> <ion-col class='col' col-5 id='" + i.toString() + "'> " + history[i] + "</ion-row>");
         } else {
+          self.moves[(i - 1) / 2]['black'] = self.history[i]
           turn = 'white';
-          $('#row' + (i - 1).toString()).append("<ion-col class='col' col-5 id='" + i.toString() + "'> " + history[i] + "</ion-col>");
         }
-
-        $('#' + i.toString()).click(function () {
-          game.reset();
-          for (let j = 0; j <= i; j++) {
-            game.move(history[j]);
-          }
-          board.position(game.fen());
-          highlight(zug, i);
-          //scrollIntoView(i)
-          zug = i;
-        });
 
       }
       //highlight(zug, -1);
-      zug = - 1;
+      self.zug = - 1;
     };
 
     var check_database = function () {
       console.time("iteration_speed:");
-      if (zug >= 0) {
+      if (self.zug >= 0 && self.zug < 10) {
         let iterations = 0;
         let games_played = []
         for (let key in self.games) {
-          let tmp = self.games[key]["positions"][zug];
-          if (tmp.toString() == game.fen()) {
+          let tmp = self.games[key]["positions"][self.zug];
+          if (tmp.toString() == self.game.fen()) {
             console.log("game found");
             games_played.push(key);
           }
@@ -160,67 +194,72 @@ export class ChessDatabaseGameComponent {
       console.timeEnd("iteration_speed:");
     };
 
-    var cfg = {
-      draggable: false,
-      position: 'start',
+    let cfg = {
+      draggable: true,
+      position: "start",
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onSnapEnd: onSnapEnd
     };
 
 
 
-    board = ChessBoard('chessDatabaseGame', cfg);
+    self.board = ChessBoard('chessDatabaseGame', cfg);
 
     //game.load_pgn(pgn2.join('\n'));
     //game.load_pgn(pgn.join('\n'));
     //const [test] = parser.parse(game.pgn());
     //console.log(JSON.stringify(test.moves()));
     updateStatus();
-    game.reset();
+    self.game.reset();
 
     $("#back").click(function () {
-      let zug_alt = zug;
-      let zug_neu = zug - 1
-      if (zug >= 0) {
-        zug = zug_neu;
-        game.undo();
-        board.position(game.fen());
+      let zug_alt = self.zug;
+      let zug_neu = self.zug - 1
+      if (self.zug >= 0) {
+        self.zug = zug_neu;
+        self.game.undo();
+        self.board.position(self.game.fen());
         highlight(zug_alt, zug_neu);
+        check_database();
+
       }
       repeat = false;
-      check_database();
     });
 
     $("#backback").click(function () {
-      let zug_alt = zug;
-      zug = -1;
-      game.reset();
-      board.position(game.fen());
+      let zug_alt = self.zug;
+      self.zug = -1;
+      self.game.reset();
+      self.board.position(self.game.fen());
       highlight(zug_alt, -1);
       repeat = false;
     });
 
     $("#vor").click(function () {
-      let zug_alt = zug;
-      let zug_neu = zug + 1;
-      if (zug_neu < history.length) {
-        zug = zug_neu;
-        game.move(history[zug_neu]);
-        board.position(game.fen());
+      let zug_alt = self.zug;
+      let zug_neu = self.zug + 1;
+      if (zug_neu < self.history.length) {
+        self.zug = zug_neu;
+        self.game.move(self.history[zug_neu]);
+        console.log(self.history[zug_neu])
+        self.board.position(self.game.fen());
         highlight(zug_alt, zug_neu);
+        check_database();
       }
       repeat = false;
-      check_database();
     });
 
     $("#vorvor").click(function () {
-      let zug_alt = zug;
-      for (let i = zug; i < history.length - 1; i++) {
-        game.move(history[i + 1]);
+      let zug_alt = self.zug;
+      for (let i = self.zug; i < self.history.length - 1; i++) {
+        self.game.move(self.history[i + 1]);
       }
-      zug = history.length - 1;
+      self.zug = self.history.length - 1;
 
       //game.load_pgn(pgn.join('\n'));
-      board.position(game.fen());
-      highlight(zug_alt, zug);
+      self.board.position(self.game.fen());
+      highlight(zug_alt, self.zug);
       repeat = false;
       check_database();
     });
@@ -238,18 +277,19 @@ export class ChessDatabaseGameComponent {
     });
 
     $("#flip").click(function () {
-      board.flip();
+      self.board.flip();
     });
 
     var makeMove = function () {
       if (repeat === true) {
-        let zug_alt = zug;
-        let zug_neu = zug + 1;
-        if (zug_neu < history.length) {
-          zug = zug_neu;
-          game.move(history[zug_neu]);
-          board.position(game.fen());
+        let zug_alt = self.zug;
+        let zug_neu = self.zug + 1;
+        if (zug_neu < self.history.length) {
+          self.zug = zug_neu;
+          self.game.move(self.history[zug_neu]);
+          self.board.position(self.game.fen());
           highlight(zug_alt, zug_neu);
+          document.getElementById((zug_neu.toString())).scrollIntoView(false);
         } else {
           repeat = false;
         }
@@ -263,60 +303,33 @@ export class ChessDatabaseGameComponent {
 
     $("#stop_icon").hide();
     $("#checkmark_icon").hide();
-    $("#black_input").hide();
-    $("#white_input").hide();
+    $("#black_name").hide();
+    $("#white_name").hide();
 
     var uniqueId = function () {
       return 'id-' + Math.random().toString(36).substr(2, 16);
     };
 
-    $("#edit").click(function () {
-      if (create == 0) {
-        let cfg_edit = {
-          draggable: true,
-          position: board.fen(),
-          onDragStart: onDragStart,
-          onDrop: onDrop,
-          onSnapEnd: onSnapEnd
-        };
-        board = ChessBoard('chessDatabaseGame', cfg_edit);
-        $("#checkmark_icon").toggle();
-        $("#create_icon").toggle();
-        $("#black_input").toggle();
-        $("#white_input").toggle();
-        $("#black_name").toggle();
-        $("#white_name").toggle();
-        create = 1;
-      } else {
-        $("#checkmark_icon").toggle();
-        $("#create_icon").toggle();
-        $("#black_input").toggle();
-        $("#white_input").toggle();
-        $("#black_name").toggle();
-        $("#white_name").toggle();
-        create = 0;
-      }
-    });
-
     $("#save_database").click(function () {
+      let save_game = Chess();
       let data = {};
       let positions = [];
-      game.header("white", self.white, "black", self.black);
-      game.reset();
+      save_game.header("white", self.white, "black", self.black);
+      save_game.reset();
       for (let i = 0; i < 10; i++) {
-        game.move(history[i]);
-        positions[i] = game.fen();
+        save_game.move(self.history[i]);
+        positions[i] = save_game.fen();
       }
-      if (history.length > 9) {
-        for (let i = 10; i < history.length; i++) {
-          game.move(history[i]);
+      if (self.history.length > 9) {
+        for (let i = 10; i < self.history.length; i++) {
+          save_game.move(self.history[i]);
         }
       }
       self.key = uniqueId();
       data[self.key] = {
         white: self.white,
         black: self.black,
-        pgn: game.pgn(),
+        pgn: save_game.pgn(),
         positions: positions
       }
 
@@ -326,7 +339,7 @@ export class ChessDatabaseGameComponent {
 
     });
 
-    
+
 
   }
 
