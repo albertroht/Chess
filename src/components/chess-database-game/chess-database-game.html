@@ -3,8 +3,6 @@
 <br>
 <ion-grid>
     <ion-row>
-        <ion-col id="notation" class="notation" col-5 style="height:75px;overflow:auto;display:block">
-        </ion-col>
         <ion-col class="notation" id="information" col-7 style="height:75px;">
             <ion-list>
                 <ion-item item-left>
@@ -22,6 +20,8 @@
                     <ion-input id="black_input" placeholder="{{black}}" [(ngModel)]="black"></ion-input>
                 </ion-item>
             </ion-list>
+        </ion-col>
+        <ion-col id="notation" class="notation" col-5 style="height:75px;overflow:auto;display:block">
         </ion-col>
     </ion-row>
 </ion-grid>
@@ -53,23 +53,46 @@
 
     </ion-row>
     <ion-row>
-        <ion-col col-4>
+        <ion-col col-2>
             <button ion-button id="flip">
                 <ion-icon style="transform: rotate(90deg)" name="repeat"></ion-icon>
             </button>
         </ion-col>
-        <ion-col col-4>
+        <ion-col col-2>
             <button ion-button id="play">
                 <ion-icon id="play_icon" name="play"></ion-icon>
                 <ion-icon id="stop_icon" name="pause"></ion-icon>
             </button>
         </ion-col>
-        <ion-col col-4>
+        <ion-col col-2>
             <button ion-button id="edit">
-                <ion-icon  name="create" id="create_icon"></ion-icon>
-                <ion-icon  name="checkmark" id="checkmark_icon"></ion-icon>
+                <ion-icon name="create" id="create_icon"></ion-icon>
+                <ion-icon name="checkmark" id="checkmark_icon"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-3>
+            <button ion-button id="save_database">
+                <ion-icon name="checkmark"></ion-icon>
+            </button>
+        </ion-col>
+        <ion-col col-3>
+            <button ion-button id="check_database">
+                <ion-icon name="search"></ion-icon>
             </button>
         </ion-col>
     </ion-row>
 
 </ion-grid>
+<br>
+
+<ion-list id="games_played">
+    <div>
+        <button ion-item item-left *ngFor="let key of games_played" (click)='presentAlert(key)'>
+            <ion-label>
+                <ion-icon><img src="imgs/white_knight.svg" style="max-height: 30px"></ion-icon>
+            </ion-label>
+            <div id="white_name" item-content>{{games[key].white}} vs {{games[key].black}}</div>
+
+        </button>
+    </div>
+</ion-list>

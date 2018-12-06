@@ -1,6 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, Self } from '@angular/core';
 import Chess from 'chess.js';
 import ChessBoard from 'chessboardjs';
+import { PgnParser } from '@chess-fu/pgn-parser';
+import { AngularFirestore } from 'angularfire2/firestore';
+import { AlertController } from 'ionic-angular';
+
+
 /**
  * Generated class for the ChessDatabaseGameComponent component.
  *
@@ -15,9 +20,25 @@ export class ChessDatabaseGameComponent {
 
   white: string = "Albert Roht";
   black: string = "Magnus Carlsen";
+  key: string;
+  games_played: any;
 
-  constructor() {
+  games: any;
+  constructor(private db: AngularFirestore, private alertCtrl: AlertController) {
     console.log('Hello ChessDatabaseGameComponent Component');
+    db.collection('chess').doc('gameCollection1').valueChanges().subscribe(data => {
+      this.games = data
+    })
+
+  }
+
+  presentAlert(key: string) {
+    let alert = this.alertCtrl.create({
+      title: 'Spielinformationen',
+      message: this.games[key].pgn,
+      buttons: ['Dismiss']
+    });
+    alert.present();
   }
 
   ngAfterViewInit() {
@@ -27,8 +48,12 @@ export class ChessDatabaseGameComponent {
       fenEl = $('#fen_game'),
       notation = $('#notation');
     var zug = 0;
-    var history;
+    var history = [];
     var repeat = false;
+    var create = 0;
+
+    //jquery has it's own this context, so self is used to call ionic context in jquery functions
+    let self = this;
 
     var onDragStart = function (source, piece, position, orientation) {
       if (game.game_over() === true ||
@@ -50,6 +75,14 @@ export class ChessDatabaseGameComponent {
       if (move === null) return 'snapback';
 
       updateStatus();
+
+
+      highlight(zug, history.length - 1);
+      zug = history.length - 1;
+
+      check_database();
+
+
     };
 
     // update the board position after the piece snap 
@@ -58,24 +91,7 @@ export class ChessDatabaseGameComponent {
       board.position(game.fen());
     };
 
-    var pgn = ['[Event "Casual Game"]',
-      '[Site "Berlin GER"]',
-      '[Date "1852.??.??"]',
-      '[EventDate "?"]',
-      '[Round "?"]',
-      '[Result "1-0"]',
-      '[White "Adolf Anderssen"]',
-      '[Black "Jean Dufresne"]',
-      '[ECO "C52"]',
-      '[WhiteElo "?"]',
-      '[BlackElo "?"]',
-      '[PlyCount "47"]',
-      '',
-      '1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.b4 Bxb4 5.c3 Ba5 6.d4 exd4 7.O-O',
-      'd3 8.Qb3 Qf6 9.e5 Qg6 10.Re1 Nge7 11.Ba3 b5 12.Qxb5 Rb8 13.Qa4',
-      'Bb6 14.Nbd2 Bb7 15.Ne4 Qf5 16.Bxd3 Qh5 17.Nf6+ gxf6 18.exf6',
-      'Rg8 19.Rad1 Qxf3 20.Rxe7+ Nxe7 21.Qxd7+ Kxd7 22.Bf5+ Ke8',
-      '23.Bd7+ Kf8 24.Bxe7# 1-0'];
+    const parser = new PgnParser();
 
     // do not pick up pieces if the game is over
     // only pick up pieces for the side to move
@@ -83,8 +99,11 @@ export class ChessDatabaseGameComponent {
     var highlight = function (zug_alt, zug_neu) {
       $('#' + zug_alt).removeClass('highlight');
       $('#' + zug_neu).addClass("highlight");
-      if (zug_neu != -1) {
-        document.getElementById(zug_neu).scrollIntoView(true);
+    }
+
+    var scrollIntoView = function (zug) {
+      if (zug != -1) {
+        document.getElementById(zug).scrollIntoView(true);
       } else {
         document.getElementById("0").scrollIntoView(true);
       }
@@ -112,12 +131,33 @@ export class ChessDatabaseGameComponent {
           }
           board.position(game.fen());
           highlight(zug, i);
+          //scrollIntoView(i)
           zug = i;
         });
 
       }
-      highlight(zug, -1);
+      //highlight(zug, -1);
       zug = - 1;
+    };
+
+    var check_database = function () {
+      console.time("iteration_speed:");
+      if (zug >= 0) {
+        let iterations = 0;
+        let games_played = []
+        for (let key in self.games) {
+          let tmp = self.games[key]["positions"][zug];
+          if (tmp.toString() == game.fen()) {
+            console.log("game found");
+            games_played.push(key);
+          }
+          iterations++;
+        }
+        self.games_played = games_played;
+        console.log("iterations:", iterations);
+
+      }
+      console.timeEnd("iteration_speed:");
     };
 
     var cfg = {
@@ -125,24 +165,28 @@ export class ChessDatabaseGameComponent {
       position: 'start',
     };
 
-    
+
 
     board = ChessBoard('chessDatabaseGame', cfg);
 
-    game.load_pgn(pgn.join('\n'));
+    //game.load_pgn(pgn2.join('\n'));
+    //game.load_pgn(pgn.join('\n'));
+    //const [test] = parser.parse(game.pgn());
+    //console.log(JSON.stringify(test.moves()));
     updateStatus();
     game.reset();
 
     $("#back").click(function () {
       let zug_alt = zug;
       let zug_neu = zug - 1
-      if (zug > 0) {
+      if (zug >= 0) {
         zug = zug_neu;
         game.undo();
         board.position(game.fen());
         highlight(zug_alt, zug_neu);
       }
       repeat = false;
+      check_database();
     });
 
     $("#backback").click(function () {
@@ -164,15 +208,21 @@ export class ChessDatabaseGameComponent {
         highlight(zug_alt, zug_neu);
       }
       repeat = false;
+      check_database();
     });
 
     $("#vorvor").click(function () {
       let zug_alt = zug;
+      for (let i = zug; i < history.length - 1; i++) {
+        game.move(history[i + 1]);
+      }
       zug = history.length - 1;
-      game.load_pgn(pgn.join('\n'));
+
+      //game.load_pgn(pgn.join('\n'));
       board.position(game.fen());
       highlight(zug_alt, zug);
       repeat = false;
+      check_database();
     });
 
     $("#play").click(function () {
@@ -216,33 +266,67 @@ export class ChessDatabaseGameComponent {
     $("#black_input").hide();
     $("#white_input").hide();
 
-    $("#create_icon").click(function () {
-      let cfg_edit = {
-        draggable: true,
-        position: board.fen(),
-        onDragStart: onDragStart,
-        onDrop: onDrop,
-        onSnapEnd: onSnapEnd
-      };
-      board = ChessBoard('chessDatabaseGame', cfg_edit);
-      $("#checkmark_icon").toggle();
-      $("#create_icon").toggle();
-      $("#black_input").toggle();
-      $("#white_input").toggle();
-      $("#black_name").toggle();
-      $("#white_name").toggle();
+    var uniqueId = function () {
+      return 'id-' + Math.random().toString(36).substr(2, 16);
+    };
+
+    $("#edit").click(function () {
+      if (create == 0) {
+        let cfg_edit = {
+          draggable: true,
+          position: board.fen(),
+          onDragStart: onDragStart,
+          onDrop: onDrop,
+          onSnapEnd: onSnapEnd
+        };
+        board = ChessBoard('chessDatabaseGame', cfg_edit);
+        $("#checkmark_icon").toggle();
+        $("#create_icon").toggle();
+        $("#black_input").toggle();
+        $("#white_input").toggle();
+        $("#black_name").toggle();
+        $("#white_name").toggle();
+        create = 1;
+      } else {
+        $("#checkmark_icon").toggle();
+        $("#create_icon").toggle();
+        $("#black_input").toggle();
+        $("#white_input").toggle();
+        $("#black_name").toggle();
+        $("#white_name").toggle();
+        create = 0;
+      }
     });
 
-    $("#checkmark_icon").click(function () {
+    $("#save_database").click(function () {
+      let data = {};
+      let positions = [];
+      game.header("white", self.white, "black", self.black);
+      game.reset();
+      for (let i = 0; i < 10; i++) {
+        game.move(history[i]);
+        positions[i] = game.fen();
+      }
+      if (history.length > 9) {
+        for (let i = 10; i < history.length; i++) {
+          game.move(history[i]);
+        }
+      }
+      self.key = uniqueId();
+      data[self.key] = {
+        white: self.white,
+        black: self.black,
+        pgn: game.pgn(),
+        positions: positions
+      }
 
-      $("#checkmark_icon").toggle();
-      $("#create_icon").toggle();
-      $("#black_input").toggle();
-      $("#white_input").toggle();
-      $("#black_name").toggle();
-      $("#white_name").toggle();
+      self.db.collection('chess').doc('gameCollection1').update(data).then(function () {
+        console.log("document updated")
+      });
 
     });
+
+    
 
   }
 
