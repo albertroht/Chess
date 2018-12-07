@@ -91,10 +91,9 @@
     <div>
         <button ion-item item-left *ngFor="let key of games_played" (click)='presentAlert(key)'>
             <ion-label>
-                <ion-icon><img src="imgs/white_knight.svg" style="max-height: 30px"></ion-icon>
+                <ion-icon><img src="imgs/chess-board.png" style="max-height: 30px"></ion-icon>
             </ion-label>
             <div id="white_name" item-content>{{games[key].white}} vs {{games[key].black}}</div>
-
         </button>
     </div>
 </ion-list>

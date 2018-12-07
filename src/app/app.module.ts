@@ -11,7 +11,6 @@ import { TabsPage } from '../pages/tabs/tabs';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { ChessDatabaseGameComponent } from '../components/chess-database-game/chess-database-game';
-import { ChessDatabaseNewComponent } from '../components/chess-database-new/chess-database-new';
 
 import { AngularFireModule } from 'angularfire2';
 import { AngularFirestoreModule } from 'angularfire2/firestore';
@@ -35,7 +34,6 @@ var config = {
     HomePage,
     TabsPage,
     ChessDatabaseGameComponent,
-    ChessDatabaseNewComponent
   ],
   imports: [
     BrowserModule,
@@ -52,7 +50,6 @@ var config = {
     ContactPage,
     HomePage,
     TabsPage,
-    ChessDatabaseNewComponent,
     ChessDatabaseGameComponent
   ],
   providers: [

@@ -32,7 +32,7 @@ export class ChessDatabaseGameComponent {
   games: any;
   constructor(private db: AngularFirestore, private alertCtrl: AlertController) {
     console.log('Hello ChessDatabaseGameComponent Component');
-    db.collection('chess').doc('gameCollection1').valueChanges().subscribe(data => {
+    db.collection('chess').doc('gameCollection').valueChanges().subscribe(data => {
       this.games = data
     })
 
@@ -333,7 +333,7 @@ export class ChessDatabaseGameComponent {
         positions: positions
       }
 
-      self.db.collection('chess').doc('gameCollection1').update(data).then(function () {
+      self.db.collection('chess').doc('gameCollection').update(data).then(function () {
         console.log("document updated")
       });
 
